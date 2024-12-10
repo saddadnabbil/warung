@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Customer;
 use Illuminate\Database\Seeder;
 use App\Models\Transaction;
 use App\Models\User;
@@ -12,12 +13,12 @@ class TransactionSeeder extends Seeder
     public function run()
     {
         $warung = Warung::first();
-        $pembeli = User::role('pembeli')->first();
+        $pembeli =  Customer::where('warung_id', $warung->id)->first();
 
         // Simulasi Deposit
         Transaction::create([
             'warung_id' => $warung->id,
-            'buyer_id' => $pembeli->id,
+            'customer_id' => $pembeli->id,
             'transaction_type' => 'deposit',
             'amount' => 100000,
             'description' => 'Deposit saldo pertama',
@@ -26,7 +27,7 @@ class TransactionSeeder extends Seeder
         // Simulasi Pembelian
         Transaction::create([
             'warung_id' => $warung->id,
-            'buyer_id' => $pembeli->id,
+            'customer_id' => $pembeli->id,
             'transaction_type' => 'purchase',
             'amount' => -20000,
             'description' => 'Pembelian item A',

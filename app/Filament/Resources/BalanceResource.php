@@ -2,14 +2,21 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\BalanceResource\Pages;
-use App\Models\Balance;
+use stdClass;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
+use App\Models\Balance;
+use App\Models\Customer;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Support\RawJs;
+use Filament\Resources\Resource;
+use Filament\Forms\Components\Select;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Forms\Components\TextInput;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Resources\BalanceResource\Pages;
 
 class BalanceResource extends Resource
 {
@@ -21,15 +28,16 @@ class BalanceResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('buyer_id')
-                    ->relationship('buyer', 'name')
+                Forms\Components\Select::make('customer_id')
+                    ->options(function () {
+                        return Customer::with('user')->get()->pluck('user.name', 'id');
+                    })
                     ->searchable()
                     ->preload()
                     ->required(),
                 Forms\Components\TextInput::make('balance')
                     ->required()
-                    ->numeric()
-                    ->default(0.00),
+                    ->prefix('Rp '),
             ]);
     }
 
@@ -37,7 +45,18 @@ class BalanceResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('buyer.name')
+                // iterations
+                TextColumn::make('index')->getStateUsing(
+                    static function (stdClass $rowLoop, HasTable $livewire): string {
+                        return (string) (
+                            $rowLoop->iteration +
+                            ($livewire->tableRecordsPerPage * (
+                                $livewire->getPage() - 1
+                            ))
+                        );
+                    }
+                ),
+                Tables\Columns\TextColumn::make('customer.user.name')
                     ->label('Customer')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('balance')
@@ -67,16 +86,13 @@ class BalanceResource extends Resource
         $query = parent::getEloquentQuery();
 
         if ($user->hasRole('pemilik_warung')) {
-            // Dapatkan ID customer yang terkait dengan warung yang dimiliki pemilik
-            $customerIds = $user->warungs()
-                ->with('transactions.buyer')
-                ->get()
-                ->flatMap(fn($warung) => $warung->transactions->pluck('buyer.id'))
-                ->unique();
+            $customerIds = $user->warungs()->with('customers')->get()->flatMap(function ($warung) {
+                return $warung->customers->pluck('id');
+            });
 
-            return $query->whereIn('buyer_id', $customerIds);
+            return $query->whereIn('customer_id', $customerIds);
         } elseif ($user->hasRole('pembeli')) {
-            return $query->where('buyer_id', $user->id);
+            return $query->where('customer_id', $user->id);
         }
 
         // Jika super_admin, tampilkan semua balances

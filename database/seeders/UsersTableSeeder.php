@@ -62,50 +62,5 @@ class UsersTableSeeder extends Seeder
 
         // Tambahkan peran super_admin jika belum ada
         Role::firstOrCreate(['name' => 'pembeli']);
-
-        // Superadmin user
-        $sid = Str::uuid();
-        $pembeli = DB::table('users')->insert([
-            'id' => $sid,
-            'username' => 'nabil',
-            'name' => 'nabil',
-            'email' => 'nabil@gmail.com',
-            'phone' => $faker->phoneNumber,
-            'email_verified_at' => now(),
-            'password' => Hash::make('nabil'),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $pembeli = DB::table('model_has_roles')->insert([
-            'role_id' => Role::where('name', 'pembeli')->first()->id,
-            'model_type' => 'App\Models\User',
-            'model_id' => $sid,
-        ]);
-
-        // Ambil semua peran kecuali super_admin
-        $roles = DB::table('roles')->where('name', '!=', 'super_admin')->get();
-
-        foreach ($roles as $role) {
-            for ($i = 0; $i < 10; $i++) {
-                $userId = Str::uuid();
-                DB::table('users')->insert([
-                    'id' => $userId,
-                    'username' => $faker->unique()->userName,
-                    'name' => $faker->name,
-                    'email' => $faker->unique()->safeEmail,
-                    'phone' => $faker->phoneNumber,
-                    'email_verified_at' => now(),
-                    'password' => Hash::make('password'),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                DB::table('model_has_roles')->insert([
-                    'role_id' => $role->id,
-                    'model_type' => 'App\Models\User',
-                    'model_id' => $userId,
-                ]);
-            }
-        }
     }
 }

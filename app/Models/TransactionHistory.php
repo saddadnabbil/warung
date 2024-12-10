@@ -11,7 +11,7 @@ class TransactionHistory extends Model
 
     protected $fillable = [
         'transaction_id',
-        'buyer_id',
+        'customer_id',
         'warung_id',
         'transaction_date',
         'amount',
@@ -22,9 +22,9 @@ class TransactionHistory extends Model
         return $this->belongsTo(Transaction::class);
     }
 
-    public function buyer()
+    public function customer()
     {
-        return $this->belongsTo(User::class, 'buyer_id');
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
 
     public function warung()

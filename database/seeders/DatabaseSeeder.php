@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             UsersTableSeeder::class,
 
             WarungSeeder::class,
+            CustomerSeeder::class,
             TransactionSeeder::class,
             BalanceSeeder::class,
             TransactionHistorySeeder::class,

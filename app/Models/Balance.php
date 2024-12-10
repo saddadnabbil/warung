@@ -10,15 +10,12 @@ class Balance extends Model
     use HasFactory;
 
     protected $fillable = [
-        'buyer_id',
+        'customer_id',
         'balance',
     ];
 
-    public function buyer()
+    public function customer()
     {
-        return $this->belongsTo(User::class, 'buyer_id')
-            ->whereHas('roles', function ($query) {
-                $query->where('name', 'pembeli');
-            });
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
 }

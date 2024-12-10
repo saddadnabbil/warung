@@ -11,7 +11,7 @@ class Transaction extends Model
 
     protected $fillable = [
         'warung_id',
-        'buyer_id',
+        'customer_id',
         'transaction_type',
         'amount',
         'description',
@@ -30,14 +30,14 @@ class Transaction extends Model
 
     public function updateBuyerBalance()
     {
-        $balance = $this->buyer->balance;
+        $balance = $this->customer->balance;
 
         if ($balance) {
             // Jika balance sudah ada, tambahkan jumlah deposit
             $balance->increment('balance', $this->amount);
         } else {
             // Jika balance belum ada, buat baru dengan nilai deposit
-            $this->buyer->balance()->create(['balance' => $this->amount]);
+            $this->customer->balance()->create(['balance' => $this->amount]);
         }
     }
 
@@ -46,12 +46,9 @@ class Transaction extends Model
         return $this->belongsTo(Warung::class);
     }
 
-    public function buyer()
+    public function customer()
     {
-        return $this->belongsTo(User::class, 'buyer_id')
-            ->whereHas('roles', function ($query) {
-                $query->where('name', 'pembeli');
-            });
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
 
     public function transactionHistory()

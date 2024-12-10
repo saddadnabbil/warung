@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('transaction_histories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('transaction_id')->constrained('transactions')->onDelete('cascade');
-            $table->foreignUuid('buyer_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
             $table->foreignId('warung_id')->constrained('warungs')->onDelete('cascade');
             $table->date('transaction_date');
             $table->decimal('amount', 15, 2);

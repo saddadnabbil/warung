@@ -2,18 +2,23 @@
 
 namespace App\Filament\Resources;
 
+use stdClass;
 use Filament\Forms;
 use App\Models\User;
 use Filament\Tables;
+use App\Models\Customer;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Illuminate\Support\Facades\Hash;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Section;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Contracts\HasTable;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\CustomerResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\CustomerResource\RelationManagers;
-use App\Models\Customer;
 
 class CustomerResource extends Resource
 {
@@ -28,21 +33,36 @@ class CustomerResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('username')
-                    ->required()
-                    ->unique(User::class, 'username'),
-                Forms\Components\TextInput::make('phone')
-                    ->tel(),
-                Forms\Components\TextInput::make('email')
-                    ->email()
-                    ->required()
-                    ->unique(User::class, 'email'),
-                Forms\Components\TextInput::make('name')
-                    ->required(),
-                Forms\Components\TextInput::make('password')
-                    ->password()
-                    ->required()
-                    ->dehydrateStateUsing(fn($state) => Hash::make($state)),
+                Section::make('Customer')
+                    ->schema([
+                        Forms\Components\TextInput::make('username')
+                            ->required()
+                            ->default(function ($record) {
+                                if ($record !== null) {
+                                    return $record->user->username;
+                                }
+                            })
+                            ->unique(User::class, 'username'),
+                        Forms\Components\TextInput::make('phone')
+                            ->tel(),
+                        Forms\Components\TextInput::make('email')
+                            ->email()
+                            ->unique(User::class, 'email'),
+                        Forms\Components\TextInput::make('name')
+                            ->required(),
+                        Select::make('warung_id')
+                            ->relationship('warung', 'name', function ($query) {
+                                return auth()->user()->hasRole('super_admin') ? $query :  $query->where('user_id', auth()->user()->id);
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->default(auth()->user()->hasRole('super_admin') ? null : auth()->user()->warungs()->first()->id)
+                            ->required(),
+                        Forms\Components\TextInput::make('password')
+                            ->password()
+                            ->required()
+                            ->dehydrateStateUsing(fn($state) => Hash::make($state)),
+                    ])->columns(2),
             ]);
     }
 
@@ -50,10 +70,22 @@ class CustomerResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('username'),
-                Tables\Columns\TextColumn::make('name'),
-                Tables\Columns\TextColumn::make('email'),
-                Tables\Columns\TextColumn::make('phone'),
+                // iterations
+                TextColumn::make('index')->getStateUsing(
+                    static function (stdClass $rowLoop, HasTable $livewire): string {
+                        return (string) (
+                            $rowLoop->iteration +
+                            ($livewire->tableRecordsPerPage * (
+                                $livewire->getPage() - 1
+                            ))
+                        );
+                    }
+                ),
+                Tables\Columns\TextColumn::make('warung.name'),
+                Tables\Columns\TextColumn::make('user.username'),
+                Tables\Columns\TextColumn::make('user.name'),
+                Tables\Columns\TextColumn::make('user.email'),
+                Tables\Columns\TextColumn::make('user.phone'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime('d/m/Y'),
             ])
@@ -65,11 +97,6 @@ class CustomerResource extends Resource
         return __("menu.nav_group.management");
     }
 
-    protected static function afterCreate($record)
-    {
-        $record->assignRole('pembeli');
-    }
-
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
@@ -77,10 +104,9 @@ class CustomerResource extends Resource
 
         if ($user->hasRole('pemilik_warung')) {
             // Mendapatkan ID customer yang terkait dengan warung yang dimiliki pemilik
-            $customerIds = $user->warungs()->with('transactions.buyer')
-                ->get()
-                ->flatMap(fn($warung) => $warung->transactions->pluck('buyer.id'))
-                ->unique();
+            $customerIds = $user->warungs()->with('customers')->get()->flatMap(function ($warung) {
+                return $warung->customers->pluck('id');
+            });
 
             return $query->whereIn('id', $customerIds);
         }

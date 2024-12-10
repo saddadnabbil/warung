@@ -7,54 +7,35 @@ use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
-    protected $table = 'users';
+    protected $table = 'customers';
 
     protected $fillable = [
-        'username',
-        'email',
-        'name',
-        'phone',
-        'password',
+        'user_id',
+        'warung_id',
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-    ];
-
-    public function warungs()
+    public function user()
     {
-        return $this->hasMany(Warung::class);
+        return $this->belongsTo(User::class);
+    }
+
+    public function warung()
+    {
+        return $this->belongsTo(Warung::class, 'warung_id');
     }
 
     public function transactions()
     {
-        return $this->hasMany(Transaction::class, 'buyer_id');
+        return $this->hasMany(Transaction::class, 'customer_id');
     }
 
     public function balance()
     {
-        return $this->hasOne(Balance::class, 'buyer_id');
+        return $this->hasOne(Balance::class, 'customer_id');
     }
 
     public function transactionHistory()
     {
-        return $this->hasMany(TransactionHistory::class, 'buyer_id');
-    }
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($model) {
-            if (!$model->id) {
-                $model->id = (string) Str::uuid(); // Menetapkan UUID sebagai ID
-            }
-        });
+        return $this->hasMany(TransactionHistory::class, 'customer_id');
     }
 }

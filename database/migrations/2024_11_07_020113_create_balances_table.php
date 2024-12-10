@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('balances', function (Blueprint $table) {
             $table->id();
-            $table->foreignUuid('buyer_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
             $table->decimal('balance', 15, 2)->default(0);
             $table->timestamps();
         });

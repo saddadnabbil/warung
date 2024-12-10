@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use stdClass;
 use Carbon\Carbon;
 use Filament\Forms;
 use App\Models\User;
@@ -11,6 +12,8 @@ use Filament\Tables\Table;
 use App\Models\Transaction;
 use Filament\Resources\Resource;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\DateFilter;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Forms\Components\DatePicker;
@@ -31,6 +34,17 @@ class TransactionResource extends Resource
     {
         return $form
             ->schema([
+                // iterations
+                TextColumn::make('index')->getStateUsing(
+                    static function (stdClass $rowLoop, HasTable $livewire): string {
+                        return (string) (
+                            $rowLoop->iteration +
+                            ($livewire->tableRecordsPerPage * (
+                                $livewire->getPage() - 1
+                            ))
+                        );
+                    }
+                ),
                 Forms\Components\Select::make('warung_id')
                     ->required()
                     ->searchable()
@@ -38,11 +52,11 @@ class TransactionResource extends Resource
                     ->relationship('warung', 'name')
                     ->default(fn() => auth()->user()->hasRole('pemilik_warung') ? auth()->user()?->warungs()?->first()->id : null)
                     ->disabled(fn() => auth()->user()->hasRole('pemilik_warung')),
-                Forms\Components\Select::make('buyer_id')
+                Forms\Components\Select::make('customer_id')
                     ->required()
                     ->searchable()
                     ->preload()
-                    ->relationship('buyer', 'name'),
+                    ->relationship('customer', 'name'),
                 Forms\Components\Select::make('transaction_type')
                     ->options(['deposit' => 'Deposit', 'purchase' => 'Purchase'])
                     ->default('purchase')
@@ -64,7 +78,7 @@ class TransactionResource extends Resource
                     ->label("Warung")
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('buyer.name')
+                Tables\Columns\TextColumn::make('customer.user.name')
                     ->label("Customer")
                     ->searchable(),
                 Tables\Columns\TextColumn::make('transaction_type'),
@@ -81,8 +95,8 @@ class TransactionResource extends Resource
             ])
             ->filters([
                 // Filter berdasarkan buyer
-                SelectFilter::make('buyer_id')
-                    ->label('Buyer')
+                SelectFilter::make('customer_id')
+                    ->label('Customer')
                     ->options(User::pluck('name', 'id'))
                     ->searchable(),
 
@@ -91,6 +105,7 @@ class TransactionResource extends Resource
                         DatePicker::make('date')
                             ->label('Filter by Date')
                     ])
+                    ->default(Carbon::now()->format('Y-m-d'))
                     ->query(function (Builder $query, array $data) {
                         if ($data['date']) {
                             $query->whereDate('created_at', '=', $data['date']);
@@ -121,7 +136,7 @@ class TransactionResource extends Resource
         $query = parent::getEloquentQuery();
 
         if ($user->hasRole('pembeli')) {
-            return $query->where('buyer_id', $user->id);
+            return $query->where('customer_id', $user->id);
         } elseif ($user->hasRole('pemilik_warung')) {
             $warungIds = $user->warungs()->pluck('id');
             return $query->whereIn('warung_id', $warungIds);

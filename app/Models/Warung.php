@@ -21,7 +21,6 @@ class Warung extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
@@ -30,5 +29,10 @@ class Warung extends Model
     public function transactionHistory()
     {
         return $this->hasMany(TransactionHistory::class);
+    }
+
+    public function customers()
+    {
+        return $this->hasMany(Customer::class);
     }
 }
