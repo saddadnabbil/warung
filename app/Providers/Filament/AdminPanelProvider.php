@@ -49,7 +49,7 @@ class AdminPanelProvider extends PanelProvider
             ->passwordReset(RequestPasswordReset::class)
             ->favicon(fn(GeneralSettings $settings) => Storage::url($settings->site_favicon))
             ->brandName(fn(GeneralSettings $settings) => $settings->brand_name)
-            ->brandLogo(fn(GeneralSettings $settings) => Storage::url($settings->brand_logo))
+            // ->brandLogo(fn(GeneralSettings $settings) => Storage::url($settings->brand_logo))
             ->brandLogoHeight(fn(GeneralSettings $settings) => $settings->brand_logoHeight)
             ->colors(fn(GeneralSettings $settings) => $settings->site_theme)
             ->databaseNotifications()->databaseNotificationsPolling('30s')

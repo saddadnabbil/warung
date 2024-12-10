@@ -37,34 +37,12 @@ class CustomerSeeder extends Seeder
 
         $pembeli->assignRole('pembeli');
 
-        // Ambil semua peran kecuali super_admin
-        $roles = DB::table('roles')->where('name', '!=', 'super_admin')->get();
-
-        foreach ($roles as $role) {
-            for ($i = 0; $i < 10; $i++) {
-                $userId = Str::uuid(); // Generate UUID for each user
-                $user = User::create([
-                    'id' => $userId,
-                    'username' => $faker->unique()->userName,
-                    'name' => $faker->name,
-                    'email' => $faker->unique()->safeEmail,
-                    'phone' => $faker->phoneNumber,
-                    'email_verified_at' => now(),
-                    'password' => Hash::make('password'),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                $user->assignRole($role->name);
-
-                // Insert customer record
-                DB::table('customers')->insert([
-                    'user_id' => $userId, // Use the UUID here
-                    'warung_id' => $warung->id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
+        // Insert customer record
+        DB::table('customers')->insert([
+            'user_id' => $pembeli->id, // Use the UUID here
+            'warung_id' => $warung->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

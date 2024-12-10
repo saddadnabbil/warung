@@ -7,11 +7,14 @@ use Carbon\Carbon;
 use Filament\Forms;
 use App\Models\User;
 use Filament\Tables;
+use App\Models\Customer;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\Transaction;
+use Illuminate\Support\Str;
 use Filament\Resources\Resource;
 use Filament\Tables\Filters\Filter;
+use Filament\Forms\Components\Section;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\DateFilter;
@@ -30,11 +33,50 @@ class TransactionResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationLabel = 'Transaksi';
+
+    protected static ?string $modelLabel = 'Transaksi';
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                // iterations
+                Section::make('Transaksi')
+                    ->schema([
+                        Forms\Components\Select::make('warung_id')
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->relationship('warung', 'name')
+                            ->default(fn() => auth()->user()->hasRole('pemilik_warung') ? auth()->user()?->warungs()?->first()->id : null),
+                        Forms\Components\Select::make('customer_id')
+                            ->options(function () {
+                                return auth()->user()->hasRole('super_admin') ? Customer::with('user')->get()->pluck('user.name', 'id') : Customer::with('user')->where('warung_id', auth()->user()->warungs()->first()->id)->get()->pluck('user.name', 'id');
+                            })
+                            ->label('Pelanggan')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                        Forms\Components\Select::make('transaction_type')
+                            ->label('Tipe Transaksi')
+                            ->options(['deposit' => 'Deposit', 'purchase' => 'Pembelian'])
+                            ->default('purchase')
+                            ->required(),
+                        Forms\Components\TextInput::make('amount')
+                            ->required()
+                            ->numeric(),
+                        Forms\Components\Textarea::make('description')
+                            ->label('Description')
+                            ->columnSpanFull()
+                            ->default('Deposit tambahan'),
+                    ])->columns(2),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
                 TextColumn::make('index')->getStateUsing(
                     static function (stdClass $rowLoop, HasTable $livewire): string {
                         return (string) (
@@ -44,44 +86,25 @@ class TransactionResource extends Resource
                             ))
                         );
                     }
-                ),
-                Forms\Components\Select::make('warung_id')
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->relationship('warung', 'name')
-                    ->default(fn() => auth()->user()->hasRole('pemilik_warung') ? auth()->user()?->warungs()?->first()->id : null)
-                    ->disabled(fn() => auth()->user()->hasRole('pemilik_warung')),
-                Forms\Components\Select::make('customer_id')
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->relationship('customer', 'name'),
-                Forms\Components\Select::make('transaction_type')
-                    ->options(['deposit' => 'Deposit', 'purchase' => 'Purchase'])
-                    ->default('purchase')
-                    ->required(),
-                Forms\Components\TextInput::make('amount')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\Textarea::make('description')
-                    ->label('Description')
-                    ->default('Deposit tambahan'),
-            ]);
-    }
-
-    public static function table(Table $table): Table
-    {
-        return $table
-            ->columns([
+                )
+                    ->label('#'),
                 Tables\Columns\TextColumn::make('warung.name')
                     ->label("Warung")
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('customer.user.name')
-                    ->label("Customer")
+                    ->label("Pelanggan")
                     ->searchable(),
-                Tables\Columns\TextColumn::make('transaction_type'),
+                Tables\Columns\TextColumn::make('transaction_type')
+                    ->label("Tipe Transaksi")
+                    ->sortable()
+                    ->formatStateUsing(fn($state): string => $state == 'deposit' ? 'Deposit' : 'Pembelian')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('description')
+                    ->searchable()
+                    ->limit(50)
+                    ->tooltip(fn(Transaction $record): ?string => $record->description)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('amount')
                     ->numeric()
                     ->money('IDR')
@@ -94,16 +117,22 @@ class TransactionResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                // Filter berdasarkan buyer
+                SelectFilter::make('transaction_type')
+                    ->label("Tipe Transaksi")
+                    ->options(['deposit' => 'Deposit', 'purchase' => 'Pembelian'])
+                    ->searchable()
+                    ->default('purchase'),
                 SelectFilter::make('customer_id')
-                    ->label('Customer')
-                    ->options(User::pluck('name', 'id'))
+                    ->label('Pelanggan')
+                    ->options(function () {
+                        return auth()->user()->hasRole('super_admin') ? Customer::with('user')->get()->pluck('user.name', 'id') : Customer::with('user')->where('warung_id', auth()->user()->warungs()->first()->id)->get()->pluck('user.name', 'id');
+                    })
                     ->searchable(),
 
                 Filter::make('created_at')
                     ->form([
                         DatePicker::make('date')
-                            ->label('Filter by Date')
+                            ->label('Tanggal')
                     ])
                     ->default(Carbon::now()->format('Y-m-d'))
                     ->query(function (Builder $query, array $data) {
@@ -119,7 +148,7 @@ class TransactionResource extends Resource
                         return 'Created at ' . Carbon::parse($data['date'])->toFormattedDateString();
                     }),
             ], layout: FiltersLayout::AboveContent)
-            ->filtersFormColumns(2)
+            ->filtersFormColumns(3)
             ->actions([
                 Tables\Actions\EditAction::make(),
             ])

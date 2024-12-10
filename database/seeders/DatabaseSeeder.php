@@ -19,8 +19,8 @@ class DatabaseSeeder extends Seeder
 
             WarungSeeder::class,
             CustomerSeeder::class,
-            TransactionSeeder::class,
             BalanceSeeder::class,
+            TransactionSeeder::class,
             TransactionHistorySeeder::class,
         ]);
 

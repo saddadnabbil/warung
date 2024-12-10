@@ -6,6 +6,7 @@ use App\Models\Balance;
 use App\Models\Transaction;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder;
 
 class BalanceOverviewWidget extends Widget
 {
@@ -18,10 +19,18 @@ class BalanceOverviewWidget extends Widget
 
     public function mount()
     {
-        // Mengambil total balance dari semua user
-        $this->totalBalance = Balance::sum('balance');
+        if (auth()->user()->hasRole('super_admin')) {
+            $this->totalBalance = Balance::sum('balance');
 
-        // Mengambil total jumlah transaksi
-        $this->totalTransactions = Transaction::count();
+            $this->totalTransactions = Transaction::count();
+        } elseif (auth()->user()->hasRole('pemilik_warung')) {
+            $this->totalBalance = Balance::whereHas('customer', function (Builder $query) {
+                $query->where('warung_id', auth()->user()->warungs()->first()->id);
+            })->sum('balance');
+
+            $this->totalTransactions = Transaction::whereHas('customer', function (Builder $query) {
+                $query->where('warung_id', auth()->user()->warungs()->first()->id);
+            })->where('transaction_type', 'purchase')->where('amount', '>', 0)->sum('amount');;
+        }
     }
 }

@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Transaction extends Model
 {
@@ -22,24 +23,43 @@ class Transaction extends Model
         parent::boot();
 
         static::created(function ($transaction) {
-            if ($transaction->transaction_type === 'deposit') {
-                $transaction->updateBuyerBalance();
-            }
+            $transaction->updateBuyerBalance();
+        });
+
+        static::updated(function ($transaction) {
+            $transaction->updateBuyerBalance();
+        });
+
+        static::deleted(function ($transaction) {
+            $transaction->updateBuyerBalance(true); // Handle rollback on delete
         });
     }
 
-    public function updateBuyerBalance()
+    public function updateBuyerBalance($isDeleting = false)
     {
-        $balance = $this->customer->balance;
+        DB::transaction(function () use ($isDeleting) {
+            $balance = Balance::firstOrNew(['customer_id' => $this->customer_id]);
 
-        if ($balance) {
-            // Jika balance sudah ada, tambahkan jumlah deposit
-            $balance->increment('balance', $this->amount);
-        } else {
-            // Jika balance belum ada, buat baru dengan nilai deposit
-            $this->customer->balance()->create(['balance' => $this->amount]);
-        }
+            if ($isDeleting) {
+                // Rollback the transaction's effect on the balance
+                if ($this->transaction_type == 'deposit') {
+                    $balance->balance -= $this->amount;
+                } elseif ($this->transaction_type == 'purchase') {
+                    $balance->balance += $this->amount;
+                }
+            } else {
+                // Apply the transaction's effect on the balance
+                if ($this->transaction_type == 'deposit') {
+                    $balance->balance += $this->amount;
+                } elseif ($this->transaction_type == 'purchase') {
+                    $balance->balance -= $this->amount;
+                }
+            }
+
+            $balance->save();
+        });
     }
+
 
     public function warung()
     {

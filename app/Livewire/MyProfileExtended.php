@@ -54,23 +54,21 @@ class MyProfileExtended extends MyProfileComponent
         return $form
             ->schema([
                 SpatieMediaLibraryFileUpload::make('media')->label('Avatar')
-                        ->collection('avatars')
-                        ->avatar()
+                    ->collection('avatars')
+                    ->avatar()
+                    ->required(),
+                Grid::make()->schema([
+                    TextInput::make('username')
+                        ->disabled()
                         ->required(),
-                    Grid::make()->schema([
-                        TextInput::make('username')
-                            ->disabled()
-                            ->required(),
-                        TextInput::make('email')
-                            ->disabled()
-                            ->required(),
-                    ]),
-                    Grid::make()->schema([
-                        TextInput::make('firstname')
-                            ->required(),
-                        TextInput::make('lastname')
-                            ->required()
-                    ]),
+                    TextInput::make('email')
+                        ->disabled()
+                        ->required(),
+                ]),
+                Grid::make()->schema([
+                    TextInput::make('name')
+                        ->required(),
+                ]),
             ])
             ->operation('edit')
             ->model($this->getUser())

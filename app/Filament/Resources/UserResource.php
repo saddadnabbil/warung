@@ -167,7 +167,6 @@ class UserResource extends Resource
                     ->collection('avatars')
                     ->wrap(),
                 Tables\Columns\TextColumn::make('username')->label('Username')
-                    ->description(fn(Model $record) => $record->firstname . ' ' . $record->lastname)
                     ->searchable(),
                 Tables\Columns\TextColumn::make('roles.name')->label('Role')
                     ->formatStateUsing(fn($state): string => Str::headline($state))
@@ -224,13 +223,13 @@ class UserResource extends Resource
 
     public static function getGloballySearchableAttributes(): array
     {
-        return ['email', 'firstname', 'lastname'];
+        return ['email', 'username', 'name'];
     }
 
     public static function getGlobalSearchResultDetails(Model $record): array
     {
         return [
-            'name' => $record->firstname . ' ' . $record->lastname,
+            'name' => $record->name,
         ];
     }
 

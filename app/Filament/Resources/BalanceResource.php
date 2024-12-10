@@ -17,6 +17,7 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\BalanceResource\Pages;
+use Filament\Forms\Components\Section;
 
 class BalanceResource extends Resource
 {
@@ -24,20 +25,28 @@ class BalanceResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationLabel = 'Deposit';
+    protected static ?string $modelLabel = 'Deposit';
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('customer_id')
-                    ->options(function () {
-                        return Customer::with('user')->get()->pluck('user.name', 'id');
-                    })
-                    ->searchable()
-                    ->preload()
-                    ->required(),
-                Forms\Components\TextInput::make('balance')
-                    ->required()
-                    ->prefix('Rp '),
+                Section::make('Balance')
+                    ->schema([
+                        Forms\Components\Select::make('customer_id')
+                            ->options(function () {
+                                return auth()->user()->hasRole('super_admin') ? Customer::with('user')->get()->pluck('user.name', 'id') : Customer::with('user')->where('warung_id', auth()->user()->warungs()->first()->id)->get()->pluck('user.name', 'id');
+                            })
+                            ->unique('balances', 'customer_id')
+                            ->label('Pelanggan')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                        Forms\Components\TextInput::make('balance')
+                            ->required()
+                            ->prefix('Rp '),
+                    ])->columns(2),
             ]);
     }
 
@@ -57,7 +66,7 @@ class BalanceResource extends Resource
                     }
                 ),
                 Tables\Columns\TextColumn::make('customer.user.name')
-                    ->label('Customer')
+                    ->label('Pelanggan')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('balance')
                     ->numeric()

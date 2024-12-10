@@ -29,7 +29,7 @@ class TransactionSeeder extends Seeder
             'warung_id' => $warung->id,
             'customer_id' => $pembeli->id,
             'transaction_type' => 'purchase',
-            'amount' => -20000,
+            'amount' => 20000,
             'description' => 'Pembelian item A',
         ]);
     }

@@ -26,8 +26,8 @@ class CustomerResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationLabel = 'Customer';
-    protected static ?string $modelLabel = 'Customer';
+    protected static ?string $navigationLabel = 'Pelanggan';
+    protected static ?string $modelLabel = 'Pelanggan';
 
     public static function form(Form $form): Form
     {
@@ -80,16 +80,43 @@ class CustomerResource extends Resource
                             ))
                         );
                     }
-                ),
-                Tables\Columns\TextColumn::make('warung.name'),
-                Tables\Columns\TextColumn::make('user.username'),
-                Tables\Columns\TextColumn::make('user.name'),
-                Tables\Columns\TextColumn::make('user.email'),
-                Tables\Columns\TextColumn::make('user.phone'),
+                )
+                    ->label('#'),
+                Tables\Columns\TextColumn::make('warung.name')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Warung'),
+                Tables\Columns\TextColumn::make('user.username')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Username'),
+                Tables\Columns\TextColumn::make('user.name')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Name'),
+                Tables\Columns\TextColumn::make('user.phone')
+                    ->label('Phone'),
+                Tables\Columns\TextColumn::make('user.email')
+                    ->label('Email'),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime('d/m/Y'),
+                    ->label('Created At')
+                    ->toggleable(isToggledHiddenByDefault: true)
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\DeleteBulkAction::make(),
             ])
             ->filters([]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            RelationManagers\TransactionsRelationManager::class,
+        ];
     }
 
     public static function getNavigationGroup(): ?string
@@ -115,13 +142,6 @@ class CustomerResource extends Resource
         return $query;
     }
 
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
 
     public static function getPages(): array
     {
