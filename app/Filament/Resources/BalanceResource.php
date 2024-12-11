@@ -64,11 +64,13 @@ class BalanceResource extends Resource
                             ))
                         );
                     }
-                ),
+                )
+                    ->label('#'),
                 Tables\Columns\TextColumn::make('customer.user.name')
                     ->label('Pelanggan')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('balance')
+                    ->label('Saldo')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')

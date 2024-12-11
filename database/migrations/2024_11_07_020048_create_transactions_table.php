@@ -14,6 +14,7 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
             $table->enum('transaction_type', ['deposit', 'purchase']);
             $table->decimal('amount', 15, 2);
+            $table->boolean('paid')->default(false);
             $table->text('description')->nullable();
             $table->timestamps();
         });

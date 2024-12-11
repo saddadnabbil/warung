@@ -30,10 +30,23 @@ class TransactionsRelationManager extends RelationManager
             ->recordTitleAttribute('customer_id')
             ->columns([
                 Tables\Columns\TextColumn::make('warung.name'),
-                Tables\Columns\TextColumn::make('customer.user.name'),
-                Tables\Columns\TextColumn::make('transaction_type'),
-                Tables\Columns\TextColumn::make('amount'),
-                Tables\Columns\TextColumn::make('description'),
+                Tables\Columns\TextColumn::make('customer.user.name')
+                    ->label('Pelanggan'),
+                Tables\Columns\TextColumn::make('transaction_type')
+                    ->label('Tipe Transaksi')
+                    ->formatStateUsing(fn($state): string => $state == 'deposit' ? 'Deposit' : 'Pembelian'),
+                Tables\Columns\TextColumn::make('amount')
+                    ->label('Jumlah')
+                    ->formatStateUsing(fn($state): string => 'Rp ' . number_format($state, 0, ',', '.')),
+                Tables\Columns\TextColumn::make('description')
+                    ->label('Keterangan'),
+                Tables\Columns\TextColumn::make('paid')
+                    ->label('Status Pembayaran')
+                    ->formatStateUsing(fn($state): string => $state == true ? 'Lunas' : 'Belum Lunas'),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Tanggal Transaksi')
+                    ->dateTime()
+                    ->sortable()
             ])
             ->filters([
                 //

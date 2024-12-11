@@ -21,6 +21,7 @@ class TransactionSeeder extends Seeder
             'customer_id' => $pembeli->id,
             'transaction_type' => 'deposit',
             'amount' => 100000,
+            'paid' => true,
             'description' => 'Deposit saldo pertama',
         ]);
 
@@ -30,6 +31,7 @@ class TransactionSeeder extends Seeder
             'customer_id' => $pembeli->id,
             'transaction_type' => 'purchase',
             'amount' => 20000,
+            'paid' => true,
             'description' => 'Pembelian item A',
         ]);
     }

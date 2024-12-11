@@ -26,6 +26,7 @@ use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Forms\Components\DateTimePicker;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\TransactionResource\Pages;
+use Filament\Forms\Components\Grid;
 
 class TransactionResource extends Resource
 {
@@ -57,14 +58,21 @@ class TransactionResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required(),
-                        Forms\Components\Select::make('transaction_type')
-                            ->label('Tipe Transaksi')
-                            ->options(['deposit' => 'Deposit', 'purchase' => 'Pembelian'])
-                            ->default('purchase')
-                            ->required(),
-                        Forms\Components\TextInput::make('amount')
-                            ->required()
-                            ->numeric(),
+                        Grid::make()->schema([
+                            Forms\Components\Select::make('transaction_type')
+                                ->label('Tipe Transaksi')
+                                ->options(['deposit' => 'Deposit', 'purchase' => 'Pembelian'])
+                                ->default('purchase')
+                                ->required(),
+                            Forms\Components\TextInput::make('amount')
+                                ->required()
+                                ->numeric(),
+                            Forms\Components\Select::make('paid')
+                                ->options([true => 'Lunas', false => 'Belum Lunas'])
+                                ->label('Status Pembayaran')
+                                ->searchable()
+                                ->default(false),
+                        ])->columns(3),
                         Forms\Components\Textarea::make('description')
                             ->label('Description')
                             ->columnSpanFull()
@@ -100,6 +108,11 @@ class TransactionResource extends Resource
                     ->sortable()
                     ->formatStateUsing(fn($state): string => $state == 'deposit' ? 'Deposit' : 'Pembelian')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('paid')
+                    ->label("Status Pembayaran")
+                    ->formatStateUsing(fn($state): string => $state == true ? 'Lunas' : 'Belum Lunas')
+                    ->badge()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('description')
                     ->searchable()
                     ->limit(50)
@@ -110,18 +123,13 @@ class TransactionResource extends Resource
                     ->money('IDR')
                     ->sortable()
                     ->summarize(Sum::make()->money('IDR'))
-                    ->label("Total"),
+                    ->label("Jumlah"),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('transaction_type')
-                    ->label("Tipe Transaksi")
-                    ->options(['deposit' => 'Deposit', 'purchase' => 'Pembelian'])
-                    ->searchable()
-                    ->default('purchase'),
                 SelectFilter::make('customer_id')
                     ->visible(fn() => auth()->user()->hasRole('super_admin') || auth()->user()->hasRole('pemilik_warung'))
                     ->label('Pelanggan')
@@ -129,7 +137,6 @@ class TransactionResource extends Resource
                         return auth()->user()->hasRole('super_admin') ? Customer::with('user')->get()->pluck('user.name', 'id') : Customer::with('user')->where('warung_id', auth()->user()->warungs()->first()->id)->get()->pluck('user.name', 'id');
                     })
                     ->searchable(),
-
                 Filter::make('created_at')
                     ->form([
                         DatePicker::make('date')
@@ -148,12 +155,22 @@ class TransactionResource extends Resource
 
                         return 'Created at ' . Carbon::parse($data['date'])->toFormattedDateString();
                     }),
+                SelectFilter::make('transaction_type')
+                    ->label("Tipe Transaksi")
+                    ->options(['deposit' => 'Deposit', 'purchase' => 'Pembelian'])
+                    ->searchable()
+                    ->default('purchase'),
+                SelectFilter::make('paid')
+                    ->label("Status Pembayaran")
+                    ->options([true => 'Lunas', false => 'Belum Lunas'])
+                    ->searchable()
+                    ->default(true),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(function () {
                 if (auth()->user()->hasRole('super_admin') || auth()->user()->hasRole('pemilik_warung')) {
-                    return 3;
+                    return 4;
                 } else {
-                    return 2;
+                    return 3;
                 }
             })
             ->actions([
