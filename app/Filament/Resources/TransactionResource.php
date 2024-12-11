@@ -58,26 +58,29 @@ class TransactionResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required(),
-                        Grid::make()->schema([
-                            Forms\Components\Select::make('transaction_type')
-                                ->label('Tipe Transaksi')
-                                ->options(['deposit' => 'Deposit', 'purchase' => 'Pembelian'])
-                                ->default('purchase')
-                                ->required(),
-                            Forms\Components\TextInput::make('amount')
-                                ->required()
-                                ->numeric(),
-                            Forms\Components\Select::make('paid')
-                                ->options([true => 'Lunas', false => 'Belum Lunas'])
-                                ->label('Status Pembayaran')
-                                ->searchable()
-                                ->default(false),
-                        ])->columns(3),
+                        Forms\Components\DateTimePicker::make('created_at')
+                            ->label('Tanggal Transaksi')
+                            ->default(Carbon::now())
+                            ->native(false)
+                            ->required(),
+                        Forms\Components\Select::make('transaction_type')
+                            ->label('Tipe Transaksi')
+                            ->options(['deposit' => 'Deposit', 'purchase' => 'Pembelian'])
+                            ->default('purchase')
+                            ->required(),
+                        Forms\Components\TextInput::make('amount')
+                            ->required()
+                            ->numeric(),
+                        Forms\Components\Select::make('paid')
+                            ->options([true => 'Lunas', false => 'Belum Lunas'])
+                            ->label('Status Pembayaran')
+                            ->searchable()
+                            ->default(false),
                         Forms\Components\Textarea::make('description')
                             ->label('Description')
                             ->columnSpanFull()
                             ->default('Deposit tambahan'),
-                    ])->columns(2),
+                    ])->columns(3),
             ]);
     }
 
@@ -125,9 +128,9 @@ class TransactionResource extends Resource
                     ->summarize(Sum::make()->money('IDR'))
                     ->label("Jumlah"),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label("Tanggal Transaksi")
                     ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('customer_id')
@@ -138,9 +141,12 @@ class TransactionResource extends Resource
                     })
                     ->searchable(),
                 Filter::make('created_at')
+
                     ->form([
-                        DatePicker::make('date')
+                        DateTimePicker::make('date')
                             ->label('Tanggal')
+                            ->default(now())
+                            ->native(false)
                     ])
                     ->default(Carbon::now()->format('Y-m-d'))
                     ->query(function (Builder $query, array $data) {
