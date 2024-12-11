@@ -141,25 +141,41 @@ class TransactionResource extends Resource
                     })
                     ->searchable(),
                 Filter::make('created_at')
-
                     ->form([
-                        DatePicker::make('date')
-                            ->label('Tanggal')
-                            ->default(now())
-                            ->native(false)
+                        Grid::make(2)
+                            ->schema([
+                                Forms\Components\DatePicker::make('created_from')
+                                    ->label('Dari Tanggal')
+                                    ->default(Carbon::now()->startOfMonth())
+                                    ->native(false),
+                                Forms\Components\DatePicker::make('created_until')
+                                    ->label('Sampai Tanggal')
+                                    ->default(Carbon::now())
+                                    ->native(false),
+                            ])
                     ])
-                    ->default(Carbon::now()->format('Y-m-d'))
                     ->query(function (Builder $query, array $data) {
-                        if ($data['date']) {
-                            $query->whereDate('created_at', '=', $data['date']);
+                        if (!empty($data['created_from']) && !empty($data['created_until'])) {
+                            $query->whereBetween('created_at', [
+                                Carbon::parse($data['created_from'])->startOfDay(),
+                                Carbon::parse($data['created_until'])->endOfDay(),
+                            ]);
+                        } elseif (!empty($data['created_from'])) {
+                            $query->whereDate('created_at', '>=', Carbon::parse($data['created_from'])->startOfDay());
+                        } elseif (!empty($data['created_until'])) {
+                            $query->whereDate('created_at', '<=', Carbon::parse($data['created_until'])->endOfDay());
                         }
                     })
                     ->indicateUsing(function (array $data): ?string {
-                        if (! $data['date']) {
-                            return null;
+                        if (!empty($data['created_from']) && !empty($data['created_until'])) {
+                            return 'From ' . Carbon::parse($data['created_from'])->toFormattedDateString() . ' to ' . Carbon::parse($data['created_until'])->toFormattedDateString();
+                        } elseif (!empty($data['created_from'])) {
+                            return 'From ' . Carbon::parse($data['created_from'])->toFormattedDateString();
+                        } elseif (!empty($data['created_until'])) {
+                            return 'Until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
                         }
 
-                        return 'Created at ' . Carbon::parse($data['date'])->toFormattedDateString();
+                        return null;
                     }),
                 SelectFilter::make('transaction_type')
                     ->label("Tipe Transaksi")
