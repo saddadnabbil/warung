@@ -25,7 +25,7 @@ class UsersTableSeeder extends Seeder
             'id' => $sid,
             'username' => 'superadmin',
             'name' => 'Super Admin',
-            'email' => 'superadmin@starter-kit.com',
+            'email' => 'superadmin@gmail.com',
             'phone' => $faker->phoneNumber,
             'email_verified_at' => now(),
             'password' => Hash::make('superadmin'),
