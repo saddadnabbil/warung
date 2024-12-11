@@ -48,7 +48,7 @@ class AdminPanelProvider extends PanelProvider
             ->login(Login::class)
             ->passwordReset(RequestPasswordReset::class)
             ->favicon(asset('images/logo.ico'))
-            ->brandName(fn(GeneralSettings $settings) => $settings->brand_name)
+            // ->brandName(fn(GeneralSettings $settings) => $settings->brand_name)
             // ->brandLogo(fn(GeneralSettings $settings) => Storage::url($settings->brand_logo))
             ->brandLogoHeight(fn(GeneralSettings $settings) => $settings->brand_logoHeight)
             ->colors(fn(GeneralSettings $settings) => $settings->site_theme)
