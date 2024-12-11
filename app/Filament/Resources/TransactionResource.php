@@ -123,6 +123,7 @@ class TransactionResource extends Resource
                     ->searchable()
                     ->default('purchase'),
                 SelectFilter::make('customer_id')
+                    ->visible(fn() => auth()->user()->hasRole('super_admin') || auth()->user()->hasRole('pemilik_warung'))
                     ->label('Pelanggan')
                     ->options(function () {
                         return auth()->user()->hasRole('super_admin') ? Customer::with('user')->get()->pluck('user.name', 'id') : Customer::with('user')->where('warung_id', auth()->user()->warungs()->first()->id)->get()->pluck('user.name', 'id');
@@ -148,7 +149,13 @@ class TransactionResource extends Resource
                         return 'Created at ' . Carbon::parse($data['date'])->toFormattedDateString();
                     }),
             ], layout: FiltersLayout::AboveContent)
-            ->filtersFormColumns(3)
+            ->filtersFormColumns(function () {
+                if (auth()->user()->hasRole('super_admin') || auth()->user()->hasRole('pemilik_warung')) {
+                    return 3;
+                } else {
+                    return 2;
+                }
+            })
             ->actions([
                 Tables\Actions\EditAction::make(),
             ])
@@ -165,7 +172,7 @@ class TransactionResource extends Resource
         $query = parent::getEloquentQuery();
 
         if ($user->hasRole('pembeli')) {
-            return $query->where('customer_id', $user->id);
+            return $query->where('customer_id', $user->customer()->first()->id);
         } elseif ($user->hasRole('pemilik_warung')) {
             $warungIds = $user->warungs()->pluck('id');
             return $query->whereIn('warung_id', $warungIds);

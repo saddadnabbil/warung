@@ -101,7 +101,7 @@ class BalanceResource extends Resource
 
             return $query->whereIn('customer_id', $customerIds);
         } elseif ($user->hasRole('pembeli')) {
-            return $query->where('customer_id', $user->id);
+            return $query->where('customer_id', $user->customer()->first()->id);
         }
 
         // Jika super_admin, tampilkan semua balances

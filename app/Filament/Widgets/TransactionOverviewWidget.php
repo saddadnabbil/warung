@@ -29,6 +29,14 @@ class TransactionOverviewWidget extends Widget
             $this->totalTransactions = Transaction::whereHas('customer', function (Builder $query) {
                 $query->where('warung_id', auth()->user()->warungs()->first()->id);
             })->where('transaction_type', 'purchase')->where('amount', '>', 0)->sum('amount');;
+        } elseif (auth()->user()->hasRole('pembeli')) {
+            $this->totalBalance = Balance::whereHas('customer', function (Builder $query) {
+                $query->where('id', auth()->user()->customer()->first()->id);
+            })->sum('balance');
+
+            $this->totalTransactions = Transaction::whereHas('customer', function (Builder $query) {
+                $query->where('id', auth()->user()->customer()->first()->id);
+            })->where('transaction_type', 'purchase')->where('amount', '>', 0)->sum('amount');
         }
     }
 }
