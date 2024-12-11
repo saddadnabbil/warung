@@ -143,7 +143,7 @@ class TransactionResource extends Resource
                 Filter::make('created_at')
 
                     ->form([
-                        DateTimePicker::make('date')
+                        DatePicker::make('date')
                             ->label('Tanggal')
                             ->default(now())
                             ->native(false)
